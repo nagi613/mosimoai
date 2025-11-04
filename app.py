@@ -1,43 +1,15 @@
 import streamlit as st
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
-import torch
-import random
+from transformers import pipeline
 
-st.title("🔮もしもAI（IFシミュレーター）")
-st.write("あなたの『もしも〜したら？』の未来を、AIが日本語で予測します。")
+st.set_page_config(page_title="もしもAI（リアル未来予測）", page_icon="🔮")
+st.title("🔮もしもAI（リアル未来予測）")
+st.write("あなたの『もしも〜したら？』に対して、AIが現実的な未来を予測します。")
 
-# 入力欄
-user_input = st.text_input("もしも○○したら？（例：もし今日勉強をサボったら？）")
+query = st.text_input("もしも○○したら？（例：もし今日勉強をサボったら？）")
 
-# モデル読み込み（最初だけ）
-@st.cache_resource
-def load_model():
-    model_name = "rinna/japanese-gpt2-small"
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    return pipeline("text-generation", model=model, tokenizer=tokenizer, device=0 if torch.cuda.is_available() else -1)
-
-generator = load_model()
-
-# ボタン押下時
-if st.button("予測する！"):
-    if user_input.strip() == "":
-        st.warning("『もしも〜』の文章を入力してください。")
-    else:
-        with st.spinner("AIが未来を予測中...🔮"):
-            result = generator(
-                user_input,
-                max_length=80,
-                do_sample=True,
-                temperature=0.9,
-                top_p=0.95,
-                num_return_sequences=1
-            )[0]['generated_text']
-
-        st.subheader("✨ AIの未来予測 ✨")
-        st.write(result)
-        st.caption(random.choice([
-            "※この未来はAIの想像です。",
-            "※信じるか信じないかは、あなた次第。",
-            "※AIがあなたの運命を見守っています。"
-        ]))
+if st.button("未来を予測する"):
+    generator = pipeline("text-generation", model="elyza/ELYZA-japanese-Llama-2-7b")
+    prompt = f"{query} この状況の未来を、現実的に日本語で予測してください。"
+    result = generator(prompt, max_new_tokens=120, do_sample=True, temperature=0.7)
+    st.markdown("### ✨ AIの未来予測 ✨")
+    st.write(result[0]['generated_text'])
